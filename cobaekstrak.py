@@ -7,7 +7,7 @@ import random
 import os
 import matplotlib.pyplot as plt
 
-image_path = r"PINS/pins_Aaron Paul"
+image_path = r"PINS"
 image_dir = os.listdir(image_path)
 
 def extract(images_path):
@@ -40,8 +40,7 @@ def batch_extractor(images_path, pickled_db_path="features.pck"):
     result = {}
     for f in files_batch:
         print ('Extracting features from image %s' % f)
-        tmp=os.path.join(files_batch,f)
-        print(extract(tmp))
+        print(extract(f))
     
     # saving all our feature vectors in pickled file
 
@@ -96,7 +95,7 @@ def run():
     sample = random.sample(files, 3)
     
     for i in files:
-        print(extract(i))
+        batch_extractor(i)
 
 
 run()
