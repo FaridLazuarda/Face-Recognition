@@ -34,13 +34,24 @@ def extract(images_path):
 
     return dsc
             
-def batch_extractor(images_path, pickled_db_path="features.pck"):
+def batch_extractor(images_path, reference, test):
     files_batch = [os.path.join(images_path, p) for p in sorted(os.listdir(images_path))]
     print(files_batch)
-    result = {}
-    for f in files_batch:
+    n=len(files_batch)
+    r=8*n/10
+    for f in range (0,r):
         print ('Extracting features from image %s' % f)
-        print(extract(f))
+        name=files_batch[f].split('/')[-1]
+        reference[name]=extract(files_batch[f])
+        print(name)
+        print(reference[name])
+
+    for f in range(r,n):
+        print ('Extracting features from image %s' % f)
+        name=files_batch[f].split('/')[-1]
+        test[name]=extract(files_batch[f])
+        print(name)
+        print(test[name])
     
     # saving all our feature vectors in pickled file
 
@@ -89,13 +100,15 @@ def show_img(path):
     plt.show()
     
 def run():
+    reference={}
+    test={}
     images_path = image_path
     files = [os.path.join(images_path, p) for p in sorted(os.listdir(images_path))]
     # getting 3 random images 
     sample = random.sample(files, 3)
     
     for i in files:
-        batch_extractor(i)
+        batch_extractor(i,reference, test)
 
 
 run()
