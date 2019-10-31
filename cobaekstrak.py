@@ -6,14 +6,15 @@ import pickle
 import random
 import os
 import matplotlib.pyplot as plt
+from fungsi import *
 
-image_path = r"C:\Users\Farid Lazuarda\Documents\Code\Face-Recognition\PINS"
+image_path = r"PINS"
 image_dir = os.listdir(image_path)
 
-def extract(image_path):
+def extract(images_path):
     for files in os.listdir(image_path):
         for files2 in os.listdir(os.path.join(image_path,files)):
-            image = imread(files2)
+            image = imread(files2, mode="RGB")
             
             alg = cv2.KAZE_create()
                 # Dinding image keypoints
@@ -40,11 +41,12 @@ def batch_extractor(images_path, pickled_db_path="features.pck"):
     files_batch = [os.path.join(images_path, p) for p in sorted(os.listdir(images_path))]
 
     result = {}
-    for f in files_batch:
-        print ('Extracting features from image %s' % f)
-        name = f.split('/')[-1].lower()
-        result[name] = extract(f)
-    
+    for i in files_batch:
+        for f in os.listdir(i):
+            print ('Extracting features from image %s' % f)
+            name = f.split('/')[-1].lower()
+            result[name] = extract(f)
+        
     # saving all our feature vectors in pickled file
     with open(pickled_db_path, 'w') as fp:
         pickle.dump(result, fp)
