@@ -6,6 +6,7 @@ import pickle
 import random
 import os
 import matplotlib.pyplot as plt
+import math
 
 image_path = r"PINS"
 image_dir = os.listdir(image_path)
@@ -39,6 +40,7 @@ def batch_extractor(images_path, reference, test):
     print(files_batch)
     n=len(files_batch)
     r=8*n/10
+    r = math.ceil(r)
     for f in range (0,r):
         print ('Extracting features from image %s' % f)
         name=files_batch[f].split('/')[-1]
