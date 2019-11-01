@@ -6,9 +6,8 @@ import pickle
 import random
 import os
 import matplotlib.pyplot as plt
-import math
 
-image_path = r"PINS"
+image_path = r"C:\Users\Farid Lazuarda\Documents\GitHub\Face-Recognition\PINS"
 image_dir = os.listdir(image_path)
 
 def extract(images_path):
@@ -35,25 +34,14 @@ def extract(images_path):
 
     return dsc
             
-def batch_extractor(images_path, reference, test):
+def batch_extractor(images_path, pickled_db_path="features.pck"):
     files_batch = [os.path.join(images_path, p) for p in sorted(os.listdir(images_path))]
     print(files_batch)
-    n=len(files_batch)
-    r=8*n/10
-    r = math.ceil(r)
-    for f in range (0,r):
+    result = {}
+    for f in files_batch:
         print ('Extracting features from image %s' % f)
-        name=files_batch[f].split('/')[-1]
-        reference[name]=extract(files_batch[f])
-        print(name)
-        print(reference[name])
-
-    for f in range(r,n):
-        print ('Extracting features from image %s' % f)
-        name=files_batch[f].split('/')[-1]
-        test[name]=extract(files_batch[f])
-        print(name)
-        print(test[name])
+        tmp=os.path.join(files_batch,f)
+        print(extract(tmp))
     
     # saving all our feature vectors in pickled file
 
@@ -102,15 +90,14 @@ def show_img(path):
     plt.show()
     
 def run():
-    reference={}
-    test={}
     images_path = image_path
     files = [os.path.join(images_path, p) for p in sorted(os.listdir(images_path))]
+
     # getting 3 random images 
     sample = random.sample(files, 3)
     
     for i in files:
-        batch_extractor(i,reference, test)
+        print(extract(i))
 
 
 run()
