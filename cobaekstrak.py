@@ -6,6 +6,7 @@ import pickle
 import random
 import os
 import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 import math
 from fungsi import *
 
@@ -77,7 +78,7 @@ def batch_extractor(images_path, reference, test):
 
 class Matcher(object):
 
-    def __init__(self, images_path="reference.txt"):
+    def __init__(self):
         dataref = open("reference.txt", "r")
         datatst = open("test.txt", "r")
         self.ref={}
@@ -93,7 +94,6 @@ class Matcher(object):
                     vector.append(a[i])
 
             self.ref[key]=vector
-            print(self.ref[key])
 
         for l in datatst:
             a=l.split(' ')
@@ -105,7 +105,6 @@ class Matcher(object):
                     vector.append(a[i])
 
             self.tst[key]=vector
-            print(self.tst[key])
 
 
     def matchEcl(self, image_path, topn=5):
@@ -132,7 +131,7 @@ class Matcher(object):
 
 
 def show_img(path):
-    img = imread(image_path, mode="RGB")
+    img = mpimg.imread(path)
     plt.imshow(img)
     plt.show()
     
@@ -146,7 +145,7 @@ def run():
     sample = random.sample(files, 3)
     #for i in files:
     #    batch_extractor(i,reference, test)
-    ma = Matcher("reference.txt")
+    ma = Matcher()
     for s in sample:
         print ('Query image ==========================================')
         show_img(s)
