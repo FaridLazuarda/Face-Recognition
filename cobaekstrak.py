@@ -80,13 +80,33 @@ class Matcher(object):
     def __init__(self, images_path="reference.txt"):
         dataref = open("reference.txt", "r")
         datatst = open("test.txt", "r")
-        self.ref={dataref}
-        self.tst={dataref}
-        for k, v in self.ref.iteritems():
-            self.names.append(k)
-            self.matrix.append(v)
-        self.matrix = np.array(self.matrix)
-        self.names = np.array(self.names)
+        self.ref={}
+        self.tst={}
+
+        for l in dataref:
+            a=l.split(' ')
+            vector=[]
+            for i in range(2049):
+                if(i==0):
+                    key=a[i]
+                else:
+                    vector.append(a[i])
+
+            self.ref[key]=vector
+            print(self.ref[key])
+
+        for l in datatst:
+            a=l.split(' ')
+            vector=[]
+            for i in range(2049):
+                if(i==0):
+                    key=a[i]
+                else:
+                    vector.append(a[i])
+
+            self.tst[key]=vector
+            print(self.tst[key])
+
 
     def matchEcl(self, image_path, topn=5):
         features = extract_features(images_path)
