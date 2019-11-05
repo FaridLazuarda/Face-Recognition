@@ -6,7 +6,6 @@ import pickle as cPickle
 import random
 import os
 
-
 def extract(image_path):
 	image = imread(image_path, mode="RGB")
 
@@ -31,6 +30,17 @@ def extract(image_path):
 
 	return dsc
 
-def folder_extractor(image_path):
+def batch_extractor(images_path, pickled_db_path="features.pck"):
+    files = [os.path.join(images_path, p) for p in sorted(os.listdir(images_path))]
+
+    result = {}
+    for f in files:
+        print 'Extracting features from image %s' % f
+        name = f.split('/')[-1].lower()
+        result[name] = extract_features(f)
+    
+    # saving all our feature vectors in pickled file
+    with open(pickled_db_path, 'w') as fp:
+        pickle.dump(result, fp)
 
 

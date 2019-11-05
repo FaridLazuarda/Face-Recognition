@@ -6,9 +6,10 @@ import pickle
 import random
 import os
 import matplotlib.pyplot as plt
-from matcher import *
+import math
+from fungsi import *
 
-image_path = r"PINS"
+image_path = r"C:\Users\Farid Lazuarda\Documents\Code\Face-Recognition\PINS"
 image_dir = os.listdir(image_path)
 
 def extract(images_path):
@@ -40,20 +41,32 @@ def batch_extractor(images_path, reference, test):
     print(files_batch)
     n=len(files_batch)
     r=8*n/10
+    r = math.ceil(r)
+
+    ref = open("reference.txt", "a")
+    tst = open("test.txt", "a")
+
     for f in range (0,r):
         print ('Extracting features from image %s' % f)
         name=files_batch[f].split('/')[-1]
         reference[name]=extract(files_batch[f])
-        print(name)
-        print(reference[name])
+        ref.write(str(name))
+        ref.write(" ")
+        for i in reference[name] :    
+            ref.write(str(i))
+            ref.write(" ")
+        ref.write("\n")
 
     for f in range(r,n):
         print ('Extracting features from image %s' % f)
         name=files_batch[f].split('/')[-1]
         test[name]=extract(files_batch[f])
-        print(name)
-        print(test[name])
-    
+        tst.write(str(name))
+        tst.write(" ")
+        for i in test[name] :
+            tst.write(str(i))
+            tst.write(" ")
+        tst.write("\n")
     # saving all our feature vectors in pickled file
 
 
@@ -64,31 +77,34 @@ def batch_extractor(images_path, reference, test):
 
 class Matcher(object):
 
-    def __init__(self, pickled_db_path="features.pck"):
-        with open(pickled_db_path) as fp:
-            self.data = pickle.load(fp)
-        self.names = []
-        self.matrix = []
-        for k, v in self.data.iteritems():
+    def __init__(self, images_path="reference.txt"):
+        dataref = open("reference.txt", "r")
+        datatst = open("test.txt", "r")
+        self.ref={dataref}
+        self.tst={dataref}
+        for k, v in self.ref.iteritems():
             self.names.append(k)
             self.matrix.append(v)
         self.matrix = np.array(self.matrix)
         self.names = np.array(self.names)
 
-    def cos_cdist(self, vector):
-        # getting cosine distance between search image and images database
-        v = vector.reshape(1, -1)
-        return scipy.spatial.distance.cdist(self.matrix, v, 'cosine').reshape(-1)
-
-    def match(self, image_path, topn=5):
-        features = extract_features(image_path)
-        img_distances = self.cos_cdist(features)
+    def matchEcl(self, image_path, topn=5):
+        features = extract_features(images_path)
+        img_distances = self.Ecl_dist(features)
         # getting top 5 records
         nearest_ids = np.argsort(img_distances)[:topn].tolist()
         nearest_img_paths = self.names[nearest_ids].tolist()
 
         return nearest_img_paths, img_distances[nearest_ids].tolist()
 
+    def matchCos(self, image_path, topn=5):
+        features = extract_features(images_path)
+        img_distances = self.Cos_simil(features)
+        # getting top 5 records
+        nearest_ids = np.argsort(img_distances)[:topn].tolist()
+        nearest_img_paths = self.names[nearest_ids].tolist()
+
+        return nearest_img_paths, img_distances[nearest_ids].tolist()
 
 
 "###########################################################################################"
@@ -108,18 +124,19 @@ def run():
     files = [os.path.join(images_path, p) for p in sorted(os.listdir(images_path))]
     # getting 3 random images 
     sample = random.sample(files, 3)
+    #for i in files:
+    #    batch_extractor(i,reference, test)
+    ma = Matcher("reference.txt")
+    for s in sample:
+        print ('Query image ==========================================')
+        show_img(s)
+        names, match = ma.match(s, topn=3)
+        print ('Result images ========================================')
+        for i in range(3):
+            # we got cosine distance, less cosine distance between vectors
+            # more they similar, thus we subtruct it from 1 to get match value
+            print ('Match %s' % (1-match[i]))
+            show_img(os.path.join(images_path, names[i]))
     
-    for i in files:
-        batch_extractor(i,reference, test)
-
-    name="...."
-
-    for k,v in reference:
-        dist.append((k,Ecl_dist(v,name)))
-
-    sorted(dist, key=lambda tup:(tup[1], tup[0]))
-    t=int(input())
-    for i in range(t):
-        show_img(....)
 
 run()
