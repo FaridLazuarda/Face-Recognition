@@ -11,13 +11,13 @@ import math
 from fungsi import *
 from PIL import Image
 
-image_path = r"C:\Users\Farid Lazuarda\Documents\Code\Face-Recognition\COPINS"
+image_path = r"C:\Users\Farid Lazuarda\Documents\Code\Face-Recognition\database\test"
 image_dir = os.listdir(image_path)
 
 def extract(images_path):
     image = imread(images_path)
             
-    alg = cv2.KAZE_create()
+    alg = cv2.AKAZE_create()
                 # Dinding image keypoints
     kps = alg.detect(image)
                 # Getting first 32 of them. 
@@ -42,34 +42,32 @@ def batch_extractor(images_path, reference, test):
     files_batch = [os.path.join(images_path, p) for p in (os.listdir(images_path))]
     print(files_batch)
     n=len(files_batch)
-    r=8*n/10
-    r = math.ceil(r)
 
-    ref = open("reference.txt", "a")
+    #ref = open("reference.txt", "a")
     tst = open("test.txt", "a")
 
-    for f in range (0,r):
+    """for f in range (0,n):
         print ('Extracting features from image %s' % f)
         name=files_batch[f]
         reference[name]=extract(files_batch[f])
         ref.write(str(name))
-        ref.write(" ")
+        ref.write("\n")
         for i in reference[name] :    
             ref.write(str(i))
-            ref.write(" ")
-        ref.write("\n")
+            ref.write(",")
+        ref.write("\n")"""
 
-    for f in range(r,n):
+    for f in range(0,n):
         print ('Extracting features from image %s' % f)
         name=files_batch[f]
         test[name]=extract(files_batch[f])
         tst.write(str(name))
-        tst.write(" ")
+        tst.write("\n")
         for i in test[name] :
             tst.write(str(i))
-            tst.write(" ")
+            tst.write(",")
         tst.write("\n")
-    # saving all our feature vectors in pickled file
+    #saving all our feature vectors in txt file
 
 
 
@@ -84,38 +82,38 @@ class Matcher(object):
         datatst = open("test.txt", "r")
         self.ref={}
         self.tst={}
-
+        
         for l in dataref:
-            a=l.split(' ')
-            vector=[]
-            for i in range(2049):
-                if(i==0):
-                    key=a[i]
-                else:
-                    vector.append(a[i])
-
-            self.ref[key]=vector
+            if(l[0]=='C'):
+                key=l
+            else:
+                a=l.split(',')
+                v=[]
+                for i in range(2048):
+                    v.append(float(a[i]))
+                self.ref[key]=v
+            
+            
 
         for l in datatst:
-            a=l.split(' ')
-            vector=[]
-            for i in range(2049):
-                if(i==0):
-                    key=a[i]
-                else:
-                    vector.append(a[i])
+            if(l[0]=='C'):
+                key=l
+            else:
+                a=l.split(',')
+                v=[]
+                for i in range(2048):
+                    v.append(float(a[i]))
+                self.tst[key]=v
 
-            self.tst[key]=vector
 
-
-    def matchEcl(self, images_path, topn=5):
+    def matchEcl(self, images_path,y, topn=5):
         ecl={}
-        for k,v in self.tst.items():
-            print(k)
-            print(v)
+        print(images_path)
+        print(y)
         for k,v in self.ref.items():
+            print(k)
             x=self.ref[k]
-            y=self.tst[images_path]
+            
             a=Ecl_dist(x,y)
             ecl[k]=a
         # getting top 5 records
@@ -152,8 +150,8 @@ def run():
     
     # getting 3 random images 
     sample = random.sample(files, 3)
-   # for i in files:
-    #    batch_extractor(i,reference, test)
+    #for i in files:
+        #batch_extractor(i,reference, test)
     ma = Matcher()
     for s in sample:
         for f in (os.listdir(s)):
@@ -161,7 +159,8 @@ def run():
             img=os.path.join(s,f)
             print(img)
             show_img(img)
-            matchEuclid = ma.matchEcl(img, topn=5)
+            y=ma.tst.get(img,None)
+            matchEuclid = ma.matchEcl(img,y, topn=5)
             matchEuclid=matchEuclid[:3]
             print ('Result images ========================================')
             for k,v in matchEuclid:
