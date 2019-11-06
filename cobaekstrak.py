@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import scipy
+import scipy.spatial
 from matplotlib.pyplot import imread
 import pickle
 import random
@@ -11,8 +12,11 @@ import math
 from fungsi import *
 from PIL import Image
 
-image_path = r"C:\Users\Farid Lazuarda\Documents\Code\Face-Recognition\database\test"
-image_dir = os.listdir(image_path)
+image_test = r"Face-Recognition/database/test"
+image_ref = r"Face-Recognition/database/base"
+
+pickled_ref="reference.pck"
+pickled_test="test.pck"
 
 def extract(images_path):
     image = imread(images_path)
@@ -42,32 +46,24 @@ def batch_extractor(images_path, reference, test):
     files_batch = [os.path.join(images_path, p) for p in (os.listdir(images_path))]
     print(files_batch)
     n=len(files_batch)
-
-    #ref = open("reference.txt", "a")
-    tst = open("test.txt", "a")
-
-    """for f in range (0,n):
+    reference={}
+    for f in files_batch:
         print ('Extracting features from image %s' % f)
-        name=files_batch[f]
-        reference[name]=extract(files_batch[f])
-        ref.write(str(name))
-        ref.write("\n")
-        for i in reference[name] :    
-            ref.write(str(i))
-            ref.write(",")
-        ref.write("\n")"""
-
-    for f in range(0,n):
+        name=f.split('/')[-1]
+        reference[name]=extract(f)
+    
+    """test={}
+    for f in files_batch:
         print ('Extracting features from image %s' % f)
-        name=files_batch[f]
-        test[name]=extract(files_batch[f])
-        tst.write(str(name))
-        tst.write("\n")
-        for i in test[name] :
-            tst.write(str(i))
-            tst.write(",")
-        tst.write("\n")
-    #saving all our feature vectors in txt file
+        name=f.split('/')[-1]
+        test[name]=extract(f)
+    """  
+    with(open(pickled_ref,'w')) as fp:
+        pickle.dump(reference,fp)   
+    """
+    with(open(pickled_test,'w')) as fp:
+        pickle.dump(test,fp)
+    """#saving all our feature vectors in txt file
 
 
 
@@ -78,55 +74,63 @@ def batch_extractor(images_path, reference, test):
 class Matcher(object):
 
     def __init__(self):
-        dataref = open("reference.txt", "r")
-        datatst = open("test.txt", "r")
-        self.ref={}
-        self.tst={}
-        
-        for l in dataref:
-            if(l[0]=='C'):
-                key=l
-            else:
-                a=l.split(',')
-                v=[]
-                for i in range(2048):
-                    v.append(float(a[i]))
-                self.ref[key]=v
-            
-            
+        with open(pickled_test) as fp:
+            self.test=pickle.load(fp)
 
-        for l in datatst:
-            if(l[0]=='C'):
-                key=l
-            else:
-                a=l.split(',')
-                v=[]
-                for i in range(2048):
-                    v.append(float(a[i]))
-                self.tst[key]=v
+        with open(pickled_ref) as fp:
+            self.ref=pickle.load(fp)
 
+        self.indexref=[]
+        self.vectorref=[]
+        self.indextest=[]
+        self.vectortest=[]
+        for k,v in self.test.items():
+            self.indextest.append(k)
+            self.vectortest.append(v)
+        self.vectortest=np.array(self.vectortest)
+        self.indextest=np.array(self.indextest)
 
-    def matchEcl(self, images_path,y, topn=5):
-        ecl={}
-        print(images_path)
-        print(y)
         for k,v in self.ref.items():
-            print(k)
-            x=self.ref[k]
-            
-            a=Ecl_dist(x,y)
-            ecl[k]=a
-        # getting top 5 records
-        sorted_ecl=sorted(ecl.items(), key=lambda kv: kv[1])
+            self.indexref.append(k)
+            self.vectorref.append(v)
+        self.vectorref=np.array(self.vectorref)
+        self.indexref=np.array(self.indexref)
 
-        return sorted_ecl
 
-    def matchCos(self, image_path, topn=5):
-        features = extract_features(images_path)
-        img_distances = self.Cos_simil(features)
+    def euclid_dist(self, vector):
+        # getting cosine distance between search image and images database
+        v = vector.reshape(1, -1)
+        dist=[]
+        for value in self.vectorref:
+            distance=Ecl_dist(v[0],value)
+            dist.append(distance)
+        return np.array(dist).reshape(-1)
+
+    def cosine(self, vector):
+        v = vector.reshape(1,-1)
+        similar=[]
+        for value in self.vectorref:
+            similarity=Cos_simil(v[0],value)
+            similar.append(similarity)
+        return np.array(similar).reshape(-1)
+
+    def matchEcl(self, images_path, topn=5):
+        features = extract(images_path)
+        img_distances=self.euclid_dist(features)
+        print(img_distances)
         # getting top 5 records
         nearest_ids = np.argsort(img_distances)[:topn].tolist()
-        nearest_img_paths = self.names[nearest_ids].tolist()
+        nearest_img_paths = self.indexref[nearest_ids].tolist()
+
+        return nearest_img_paths, img_distances[nearest_ids].tolist()
+
+    def matchCos(self, image_path, topn=5):
+        features = extract(image_path)
+        img_distances = self.cosine(features)
+        
+        # getting top 5 records
+        nearest_ids = np.argsort(img_distances)[:topn].tolist()
+        nearest_img_paths = self.indexref[nearest_ids].tolist()
 
         return nearest_img_paths, img_distances[nearest_ids].tolist()
 
@@ -143,32 +147,33 @@ def run():
     reference={}
     test={}
     dist=[]
-    images_path = image_path
-    files = [os.path.join(images_path, p) for p in sorted(os.listdir(images_path))]
+
+    files = [os.path.join(image_test, p) for p in sorted(os.listdir(image_test))]
     
 
     
     # getting 3 random images 
-    sample = random.sample(files, 3)
-    #for i in files:
-        #batch_extractor(i,reference, test)
+    sample = random.sample(files, 1)
+    #batch_extractor(image_ref,reference, test)
     ma = Matcher()
+    
     for s in sample:
-        for f in (os.listdir(s)):
-            print ('Query image ==========================================')
-            img=os.path.join(s,f)
-            print(img)
-            show_img(img)
-            y=ma.tst.get(img,None)
-            matchEuclid = ma.matchEcl(img,y, topn=5)
-            matchEuclid=matchEuclid[:3]
-            print ('Result images ========================================')
-            for k,v in matchEuclid:
-                # we got cosine distance, less cosine distance between vectors
-                # more they similar, thus we subtruct it from 1 to get match value
-                print("Show image")
-                print(k)
-                show_img(k)
+        print ('Query image ==========================================')
+        
+        print(s)
+        show_img(s)
+        
+        
+        name, match = ma.matchCos(s,topn=5)
+        print(name)
+        print(match)
+        print ('Result images ========================================')
+        for i in range(5):
+            # we got cosine distance, less cosine distance between vectors
+            # more they similar, thus we subtruct it from 1 to get match value
+            print("Show image")
+            
+            show_img(os.path.join(image_ref,name[i]))
     
 
 run()
