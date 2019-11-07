@@ -8,7 +8,7 @@
 
 from PyQt4 import QtCore, QtGui
 from PyQt4.QtGui import QFileDialog,QPixmap
-from cobaekstrak import *
+from extractormatcher import *
 from pathlib import Path
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
